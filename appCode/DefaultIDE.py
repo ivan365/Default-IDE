@@ -64,7 +64,8 @@ class PowerfulEditor:
 
         self.output_label = tk.Label(self.output_frame, text="Вывод:", font=("Helvetica", 12, "bold"))
         self.output_label.pack(anchor="w", padx=5)
-        self.output_area = scrolledtext.ScrolledText(self.output_frame, font=("Courier", 10), state=tk.DISABLED, background="#222", foreground="#eee")
+        self.output_area = scrolledtext.ScrolledText(self.output_frame, font=("Courier", 10), state=tk.NORMAL, background="#222", foreground="#eee")
+        self.output_area.bind("<Return>", self.handle_input)
         self.output_area.pack(expand=True, fill="both", padx=5, pady=5)
 
         self.menu_bar = tk.Menu(self.root)
@@ -83,8 +84,23 @@ class PowerfulEditor:
         self.run_menu.add_command(label="Запустить файл", command=self.run_file)
         self.run_menu.add_command(label="Остановить", command=self.stop_execution)
         def showAbout():
-            messagebox.showinfo("О программе","DefaultIDE \nВерсия Alfa 0.3 \nAutors: Ivan Hniedash, Ihor Holodenko")
+            messagebox.showinfo("О программе","DefaultIDE \nВерсия Alfa v0.4 (b1)\nAutors: \nIvan Hniedash \nIhor Holodenko")
         self.root.createcommand('tkAboutDialog', showAbout)
+
+    def handle_input(self, event):
+        """Обрабатывает ввод пользователя в окне вывода."""
+        if self.process and self.process.poll() is None:
+            # Получаем последнюю строку, которую ввёл пользователь
+            last_line = self.output_area.get("end-2c linestart", "end-1c")
+            
+            # Отправляем эту строку в stdin запущенного процесса
+            self.process.stdin.write(last_line + "\n")
+            self.process.stdin.flush()
+            
+            # Добавляем перенос строки и новый ">" в консоль IDE для удобства
+            self.output_area.insert(tk.END, '\n')
+            
+            return "break" # Предотвращает стандартное поведение Enter (новую строку)
 
     def load_compiler_path(self):
         if os.path.exists(self.config_file):
@@ -138,7 +154,7 @@ class PowerfulEditor:
         self.output_area.insert(tk.END, f"Запуск файла: {self.current_file_path}\nИспользуется компилятор: {compiler}\n\n")
 
         try:
-            self.process = subprocess.Popen([compiler, self.current_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+            self.process = subprocess.Popen([compiler, self.current_file_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
             
             thread_out = threading.Thread(target=self.read_output, args=(self.process.stdout, "stdout"))
             thread_err = threading.Thread(target=self.read_output, args=(self.process.stderr, "stderr"))
@@ -155,9 +171,9 @@ class PowerfulEditor:
         try:
             for line in stream:
                 if stream_type == "stderr":
-                    self.output_area.insert(tk.END, f"ОШИБКА: {line}", 'error_tag')
+                    self.output_area.insert(tk.END, f">>> ОШИБКА: {line.strip()}\n", 'error_tag')
                 else:
-                    self.output_area.insert(tk.END, line)
+                    self.output_area.insert(tk.END, f">>> {line.strip()}\n")
                 self.output_area.see(tk.END)
         except ValueError:
             pass
@@ -189,7 +205,7 @@ class PowerfulEditor:
                 self.text_area.tag_add(f"{tag_name}_tag", start_index, end_index)
 
     def open_file(self):
-        file_path = filedialog.askopenfilename(defaultextension=".py", filetypes=[("Python Files", "*.py"), ("Text Files", "*.txt"), ("All Files", "*.*")])
+        file_path = filedialog.askopenfilename(defaultextension=".txt", filetypes=[("Python Files", "*.py"), ("Text Files", "*.txt"), ("All Files", "*.*")])
         if file_path:
             self.current_file_path = file_path
             try:
