@@ -9,21 +9,29 @@ import sys
 # Настраиваемый "словарь" правил для подсветки
 SYNTAX_RULES = {
     'keywords': {
-        'color': 'orange',
-        'pattern': r'\b(def|class|import|from|as|if|else|elif|for|while|in|is|not|and|or|True|False|None)\b'
+        'color': '#FF0000',
+        'pattern': r'\b(funkcia|obj|distaty|iz|jak|koly|potim|potimta|dla|poky|v|je|ne|ta|abo|vse|rob)\b'
     },
     'operators': {
-        'color': '#8A2BE2',
+        'color': "#BD76FF",
         'pattern': r'([+\-*/=><~!%^&|\[\]{}()])'
     },
     'strings': {
-        'color': 'green',
+        'color': '#11EE11',
         'pattern': r'(".*?"|\'.*?\')'
     },
     'comments': {
-        'color': 'gray',
+        'color': "#AEAEAE",
         'pattern': r'#.*$'
-    }
+    },
+    'functions': {
+        'color': "#3ECFFF", # Светло-голубой
+        'pattern': r'\b(\w+)\s*\('
+    },
+    'statements': {
+        'color': "#FF952C",
+        'pattern': r'\b(tak|ni|nema)\b'
+    },
 }
 
 class PowerfulEditor:
@@ -100,14 +108,19 @@ class PowerfulEditor:
             messagebox.showwarning("Предупреждение", "Процесс уже запущен. Сначала остановите его.")
             return
 
+        # Получаем путь к папке, где находится файл скрипта
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
         # Проверяем, запущены ли мы из PyInstaller
         if getattr(sys, 'frozen', False):
-            base_dir = getattr(sys, '_MEIPASS', os.getcwd())
+            # Если да, используем путь из временной папки PyInstaller
+            base_dir = getattr(sys, '_MEIPASS', script_dir)
             default_compiler = os.path.join(base_dir, 'Default')
         else:
-            default_compiler = os.path.join(os.getcwd(), 'Default')
+            # Если нет (обычный запуск), ищем Default в той же папке, что и скрипт
+            default_compiler = os.path.join(script_dir, 'Default')
 
-        # НОВАЯ ЛОГИКА: используем сохранённый путь ТОЛЬКО если он существует
+        # Используем сохранённый путь, если он существует и валиден
         if self.compiler_path and os.path.exists(self.compiler_path):
             compiler = self.compiler_path
         else:
@@ -163,8 +176,13 @@ class PowerfulEditor:
         for tag_name, rule in SYNTAX_RULES.items():
             pattern = rule['pattern']
             for match in re.finditer(pattern, text_content, re.MULTILINE):
-                start_index = f"1.0+{match.start()}c"
-                end_index = f"1.0+{match.end()}c"
+                # Проверяем, если есть группа захвата, используем её
+                if len(match.groups()) > 0:
+                    start_index = f"1.0+{match.start(1)}c"
+                    end_index = f"1.0+{match.end(1)}c"
+                else:
+                    start_index = f"1.0+{match.start()}c"
+                    end_index = f"1.0+{match.end()}c"
                 self.text_area.tag_add(f"{tag_name}_tag", start_index, end_index)
 
     def open_file(self):
