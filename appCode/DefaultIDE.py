@@ -55,6 +55,8 @@ class PowerfulEditor:
         self.text_area = scrolledtext.ScrolledText(self.editor_frame, wrap=tk.WORD, font=("Courier", 14))
         self.text_area.pack(expand=True, fill="both")
         self.text_area.bind("<KeyRelease>", self.highlight_syntax)
+        self.root.bind('<Command-s>', lambda event: self.save_file()) # Для macOS
+        self.root.bind('<Control-s>', lambda event: self.save_file()) # Для Windows/Linux
 
         for tag_name, rule in SYNTAX_RULES.items():
             self.text_area.tag_config(f"{tag_name}_tag", foreground=rule['color'])
