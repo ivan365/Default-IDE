@@ -37,7 +37,7 @@ SYNTAX_RULES = {
 class PowerfulEditor:
     def __init__(self, root):
         self.root = root
-        self.root.title("Мощный Py-Editor")
+        self.root.title("Default IDE")
         self.root.geometry("900x700")
 
         self.current_file_path = None
@@ -52,7 +52,7 @@ class PowerfulEditor:
         self.editor_frame = tk.Frame(self.paned_window)
         self.paned_window.add(self.editor_frame, stretch="always")
 
-        self.text_area = scrolledtext.ScrolledText(self.editor_frame, wrap=tk.WORD, font=("Courier", 12))
+        self.text_area = scrolledtext.ScrolledText(self.editor_frame, wrap=tk.WORD, font=("Courier", 14))
         self.text_area.pack(expand=True, fill="both")
         self.text_area.bind("<KeyRelease>", self.highlight_syntax)
 
@@ -82,7 +82,10 @@ class PowerfulEditor:
         self.run_menu.add_command(label="Настроить компилятор", command=self.set_compiler_path)
         self.run_menu.add_command(label="Запустить файл", command=self.run_file)
         self.run_menu.add_command(label="Остановить", command=self.stop_execution)
-    
+        def showAbout():
+            messagebox.showinfo("О программе","DefaultIDE \nВерсия Alfa 0.3 \nAutors: Ivan Hniedash, Ihor Holodenko")
+        self.root.createcommand('tkAboutDialog', showAbout)
+
     def load_compiler_path(self):
         if os.path.exists(self.config_file):
             with open(self.config_file, "r") as file:
@@ -93,7 +96,7 @@ class PowerfulEditor:
             file.write(self.compiler_path)
 
     def set_compiler_path(self):
-        path = filedialog.askopenfilename(title="Выберите интерпретатор Python", filetypes=[("Executable Files", "*.exe"), ("All Files", "*.*")])
+        path = filedialog.askopenfilename(title="Выберите интерпретатор Python", filetypes=[("All Files", "*.*"), ("Application file", "*.app")])
         if path:
             self.compiler_path = path
             self.save_compiler_path()
@@ -194,7 +197,7 @@ class PowerfulEditor:
                     content = file.read()
                     self.text_area.delete("1.0", tk.END)
                     self.text_area.insert(tk.END, content)
-                self.root.title(f"Py-Editor - {os.path.basename(file_path)}")
+                self.root.title(f"Default IDE - {os.path.basename(file_path)}")
                 self.highlight_syntax()
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Не удалось открыть файл: {e}")
@@ -203,7 +206,7 @@ class PowerfulEditor:
         if self.current_file_path:
             file_path = self.current_file_path
         else:
-            file_path = filedialog.asksaveasfilename(defaultextension=".py", filetypes=[("Python Files", "*.py"), ("Text Files", "*.txt"), ("All Files", "*.*")])
+            file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Python Files", "*.py"), ("Text Files", "*.txt"), ("All Files", "*.*")])
         
         if file_path:
             try:
@@ -211,7 +214,7 @@ class PowerfulEditor:
                     content = self.text_area.get("1.0", tk.END)
                     file.write(content)
                 self.current_file_path = file_path
-                self.root.title(f"Py-Editor - {os.path.basename(file_path)}")
+                self.root.title(f"Default IDE - {os.path.basename(file_path)}")
                 messagebox.showinfo("Сохранено", "Файл успешно сохранён.")
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Не удалось сохранить файл: {e}")
