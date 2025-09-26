@@ -85,8 +85,9 @@ class PowerfulEditor:
         self.run_menu.add_command(label="Настроить компилятор", command=self.set_compiler_path)
         self.run_menu.add_command(label="Запустить файл", command=self.run_file)
         self.run_menu.add_command(label="Остановить", command=self.stop_execution)
+
         def showAbout():
-            messagebox.showinfo("О программе","DefaultIDE \nВерсия Alfa v0.4 (b4)\nAutors: \nIvan Hniedash \nIhor Holodenko")
+            messagebox.showinfo("О программе","DefaultIDE \nversion: Beta v0.5 (b1)\nAutors: \nIvan Hniedash \nIhor Holodenko")
         self.root.createcommand('tkAboutDialog', showAbout)
 
     def handle_input(self, event):
