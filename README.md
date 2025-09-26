@@ -13,7 +13,8 @@ pyinstaller --name DefaultIDE --noconsole --windowed --onefile ./appCode/Default
 --add-binary "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13:." \
 --add-binary "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload:." \
 --add-binary "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages:." \
---add-binary "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/setuptools/_vendor:."
+--add-binary "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/setuptools/_vendor:." \
+--icon images/icon.icns
 ```
 
 ## Объяснение параметров
