@@ -6,14 +6,17 @@ import os
 import threading
 import sys
 
-# Настраиваемый "словарь" правил для подсветки
 SYNTAX_RULES = {
     'keywords': {
         'color': '#FF0000',
         'pattern': r'\b(funkcia|obj|distaty|iz|jak|koly|potim|potimta|dla|poky|v|je|ne|ta|abo|vse|rob)\b'
     },
+    'datatype':{
+        'color': "#007F72",
+        'pattern': r'\b(lit|cis|dv)\b'
+    },
     'operators': {
-        'color': "#BD76FF",
+        'color': "#AA50FF",
         'pattern': r'([+\-*/=><~!%^&|\[\]{}()])'
     },
     'strings': {
@@ -25,8 +28,12 @@ SYNTAX_RULES = {
         'pattern': r'#.*$'
     },
     'functions': {
-        'color': "#3ECFFF", # Светло-голубой
+        'color': "#3ECFFF",
         'pattern': r'\b(\w+)\s*\('
+    },
+    'igordaun': {
+        'color': "#3ECFFF",
+        'pattern': r'\b(nadpys)\b'
     },
     'statements': {
         'color': "#FF952C",
