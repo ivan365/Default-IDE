@@ -5,6 +5,9 @@ import subprocess
 import os
 import threading
 import sys
+import tkinter.font as tkfont # Импортируем модуль для работы со шрифтами
+
+# Удаляем глобальную переменную fontSize и переносим ее в класс
 
 SYNTAX_RULES = {
     'keywords': {
@@ -52,6 +55,10 @@ class PowerfulEditor:
         self.config_file = "compiler_path.cfg"
         self.process = None
         self.load_compiler_path()
+        
+        # 1. Используем атрибуты класса для размера и семейства шрифта
+        self.font_size = 14 
+        self.font_family = "Courier" # Устанавливаем шрифт по умолчанию
 
         self.paned_window = tk.PanedWindow(self.root, orient=tk.VERTICAL, sashrelief=tk.RAISED)
         self.paned_window.pack(expand=True, fill="both")
@@ -59,23 +66,32 @@ class PowerfulEditor:
         self.editor_frame = tk.Frame(self.paned_window)
         self.paned_window.add(self.editor_frame, stretch="always")
 
-        self.text_area = scrolledtext.ScrolledText(self.editor_frame, wrap=tk.WORD, font=("Courier", 14))
+        # Инициализируем текстовую область, используя оба атрибута
+        self.text_area = scrolledtext.ScrolledText(self.editor_frame, wrap=tk.WORD, font=(self.font_family, self.font_size))
         self.text_area.pack(expand=True, fill="both")
         self.text_area.bind("<KeyRelease>", self.highlight_syntax)
         self.root.bind('<Command-s>', lambda event: self.save_file()) # Для macOS
         self.root.bind('<Control-s>', lambda event: self.save_file()) # Для Windows/Linux
+        self.root.bind('<Command-=>', lambda event: self.increase_font_size())
+        self.root.bind('<Command-+>', lambda event: self.increase_font_size())
+        self.root.bind('<Command-minus>', lambda event: self.decrease_font_size())
 
         for tag_name, rule in SYNTAX_RULES.items():
             self.text_area.tag_config(f"{tag_name}_tag", foreground=rule['color'])
+        
+        # Добавляем тег для вывода ошибок в консоль
+        self.text_area.tag_config("error_tag", foreground="#FF5555")
 
         self.output_frame = tk.Frame(self.paned_window)
         self.paned_window.add(self.output_frame, height=150, stretch="never")
 
         self.output_label = tk.Label(self.output_frame, text="Вывод:", font=("Helvetica", 12, "bold"))
         self.output_label.pack(anchor="w", padx=5)
+        # Шрифту вывода можно задать другой размер, чтобы он оставался читаемым
         self.output_area = scrolledtext.ScrolledText(self.output_frame, font=("Courier", 10), state=tk.NORMAL, background="#222", foreground="#eee")
         self.output_area.bind("<Return>", self.handle_input)
         self.output_area.pack(expand=True, fill="both", padx=5, pady=5)
+        self.output_area.tag_config('error_tag', foreground='red')
 
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
@@ -92,10 +108,51 @@ class PowerfulEditor:
         self.run_menu.add_command(label="Настроить компилятор", command=self.set_compiler_path)
         self.run_menu.add_command(label="Запустить файл", command=self.run_file)
         self.run_menu.add_command(label="Остановить", command=self.stop_execution)
+        
+        # Меню "Шрифт"
+        self.font_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Шрифт", menu=self.font_menu)
+        
+        # 2. Подменю для выбора семейства шрифтов
+        self.font_family_menu = tk.Menu(self.font_menu, tearoff=0)
+        self.font_menu.add_cascade(label="Семейство шрифтов", menu=self.font_family_menu)
+        
+        # Определяем список подходящих моноширинных шрифтов
+        self.common_monospace_fonts = ["Courier", "Consolas", "Monospace", "DejaVu Sans Mono", "Menlo"]
+        
+        # Добавляем команды для каждого шрифта
+        for font_name in self.common_monospace_fonts:
+            self.font_family_menu.add_command(
+                label=font_name, 
+                command=lambda name=font_name: self.set_font_family(name)
+            )
 
+        self.font_menu.add_command(label="Размер шрифта +", command=self.increase_font_size)
+        self.font_menu.add_command(label="Размер шрифта -", command=self.decrease_font_size)
         def showAbout():
-            messagebox.showinfo("О программе","DefaultIDE \nversion: Beta v0.5 (b1)\nAutors: \nIvan Hniedash \nIhor Holodenko")
+            messagebox.showinfo("О программе","DefaultIDE \nversion: Beta v0.5.2 (b1)\nAutors: \nIvan Hniedash\t (IDE) \nIhor Holodenko\t (LANG)")
         self.root.createcommand('tkAboutDialog', showAbout)
+    
+
+    def set_font_family(self, font_name):
+        """Устанавливает новое семейство шрифтов и обновляет текстовую область."""
+        self.font_family = font_name
+        # Обновляем шрифт, используя новое семейство и текущий размер
+        self.text_area.config(font=(self.font_family, self.font_size))
+
+    def increase_font_size(self):
+        """Увеличивает размер шрифта."""
+        if self.font_size < 72: # Ограничение, чтобы шрифт не был слишком большим
+            self.font_size += 2
+            # Обновляем шрифт, используя текущее семейство и новый размер
+            self.text_area.config(font=(self.font_family, self.font_size))
+
+    def decrease_font_size(self):
+        """Уменьшает размер шрифта."""
+        if self.font_size > 8: # Ограничение, чтобы шрифт не был слишком маленьким
+            self.font_size -= 2
+            # Обновляем шрифт, используя текущее семейство и новый размер
+            self.text_area.config(font=(self.font_family, self.font_size))
 
     def handle_input(self, event):
         """Обрабатывает ввод пользователя в окне вывода."""
@@ -114,12 +171,19 @@ class PowerfulEditor:
 
     def load_compiler_path(self):
         if os.path.exists(self.config_file):
-            with open(self.config_file, "r") as file:
-                self.compiler_path = file.read().strip()
+            try:
+                with open(self.config_file, "r") as file:
+                    self.compiler_path = file.read().strip()
+            except Exception:
+                self.compiler_path = None # В случае ошибки чтения, сбрасываем путь
 
     def save_compiler_path(self):
-        with open(self.config_file, "w") as file:
-            file.write(self.compiler_path)
+        try:
+            with open(self.config_file, "w") as file:
+                file.write(self.compiler_path)
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось сохранить путь к компилятору: {e}")
+
 
     def set_compiler_path(self):
         path = filedialog.askopenfilename(title="Выберите интерпретатор Python", filetypes=[("All Files", "*.*"), ("Application file", "*.app")])
@@ -142,21 +206,18 @@ class PowerfulEditor:
 
         # Проверяем, запущены ли мы из PyInstaller
         if getattr(sys, 'frozen', False):
-            # Если да, используем путь из временной папки PyInstaller
             base_dir = getattr(sys, '_MEIPASS', script_dir)
             default_compiler = os.path.join(base_dir, 'Default')
         else:
-            # Если нет (обычный запуск), ищем Default в той же папке, что и скрипт
             default_compiler = os.path.join(script_dir, 'Default')
 
-        # Используем сохранённый путь, если он существует и валиден
         if self.compiler_path and os.path.exists(self.compiler_path):
             compiler = self.compiler_path
         else:
             compiler = default_compiler
         
         if not os.path.exists(compiler):
-            messagebox.showerror("Ошибка", f"Компилятор не найден по пути:\n{compiler}")
+            messagebox.showerror("Ошибка", f"Компилятор не найден по пути:\n{compiler}\n\nПожалуйста, настройте его в меню 'Выполнить'.")
             return
 
         self.output_area.config(state=tk.NORMAL)
@@ -164,6 +225,7 @@ class PowerfulEditor:
         self.output_area.insert(tk.END, f"Запуск файла: {self.current_file_path}\nИспользуется компилятор: {compiler}\n\n")
 
         try:
+            # Запускаем ваш компилятор, передавая путь к текущему файлу как аргумент
             self.process = subprocess.Popen([compiler, self.current_file_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
             
             thread_out = threading.Thread(target=self.read_output, args=(self.process.stdout, "stdout"))
